@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>D&D Text-Based Game</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f0f0f0;
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        header {
+            background-color: #333;
+            color: #fff;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-radius: 5px;
+        }
+        header h1 {
+            margin: 0;
+        }
+        #game-screen {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            margin-top: 20px;
+        }
+        #story {
+            margin-bottom: 20px;
+        }
+        #options {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .option-button {
+            background-color: #333;
+            color: #fff;
+            border: none;
+            padding: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        .option-button:hover {
+            background-color: #555;
+        }
+        #theme-toggle {
+            padding: 10px;
+            cursor: pointer;
+            background: none;
+            border: 1px solid #fff;
+            border-radius: 5px;
+            color: #fff;
+            transition: background-color 0.3s ease;
+        }
+        #theme-toggle:hover {
+            background-color: #555;
+        }
+        body.dark-mode {
+            background-color: #222;
+            color: #fff;
+        }
+        header.dark-mode {
+            background-color: #555;
+        }
+        #game-screen.dark-mode {
+            background-color: #444;
+        }
+        .stats {
+            margin-top: 10px;
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        .stats p {
+            margin: 5px 0;
+        }
+        .stat-item {
+            display: flex;
+            align-items: center;
+        }
+        .stat-item img {
+            margin-right: 5px;
+        }
+        .health-bar {
+            height: 20px;
+            background-color: #ddd;
+            border-radius: 5px;
+            overflow: hidden;
+            width: 100%; 
+        }
+        .health-bar-inner {
+            height: 100%;
+            background-color: #28a745;
+            transition: width 0.3s ease;
+        }
+        .enemy {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #ffe4b5;
+            border: 1px solid #ffc107;
+            border-radius: 5px;
+        }
+        .enemy-name {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>D&D Text-Based Game</h1>
+        <button id="theme-toggle">Toggle Theme</button>
+    </header>
+    <section id="game-screen">
+        <div id="story">
+            <p>Welcome to the game! Press "Start Game" to begin your adventure.</p>
+        </div>
+        <div id="options">
+            <button id="start-game" class="option-button">Start Game</button>
+        </div>
+        <div id="stats" class="stats">
+            <div class="stat-item">
+                <img src="https://img.icons8.com/ios-filled/50/000000/health-book.png" alt="Health" width="20">
+                <p>Health: <span id="health">100</span></p>
+            </div>
+            <div class="stat-item">
+                <img src="https://img.icons8.com/ios-filled/50/000000/mana.png" alt="Mana" width="20">
+                <p>Mana: <span id="mana">50</span></p>
+            </div>
+            <div class="stat-item">
+                <img src="https://img.icons8.com/ios-filled/50/000000/coins.png" alt="Gold" width="20">
+                <p>Gold: <span id="gold">0</span></p>
+            </div>
+            <div class="stat-item">
+                <img src="https://img.icons8.com/ios-filled/50/000000/experience.png" alt="XP" width="20">
+                <p>XP: <span id="xp">0</span></p>
+            </div>
+            <div class="stat-item">
+                <img src="https://img.icons8.com/ios-filled/50/000000/level-up.png" alt="Level" width="20">
+                <p>Level: <span id="level">1</span></p>
+            </div>
+        </div>
+        <div id="store" style="display: none;">
+            <h2>Store</h2>
+            <div id="store-items">
+                <!-- Store items will be dynamically added here -->
+            </div>
+            <button id="exit-store" class="option-button">Exit Store</button>
+        </div>
+        <div id="enemy-info" class="enemy" style="display: none;">
+            <p class="enemy-name">Enemy Name: <span id="enemy-name"></span></p>
+            <div class="health-bar">
+                <div id="enemy-health-bar" class="health-bar-inner" style="width: 100%;"></div>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        // Toggle Theme
+        const themeToggle = document.getElementById('theme-toggle');
+        themeToggle.addEventListener('click', function() {
+            document.body.classList.toggle('dark-mode');
+            const gameScreen = document.getElementById('game-screen');
+            gameScreen.classList.toggle('dark-mode');
+            if (document.body.classList.contains('dark-mode')) {
+                themeToggle.textContent = "Light Mode";
+            } else {
+                themeToggle.textContent = "Dark Mode";
+            }
+        });
+
+        // Game elements
+        const storyElement = document.getElementById('story');
+        const optionsElement = document.getElementById('options');
+        const startGameButton = document.getElementById('start-game');
+        const healthElement = document.getElementById('health');
+        const manaElement = document.getElementById('mana');
+        const goldElement = document.getElementById('gold');
+        const xpElement = document.getElementById('xp');
+        const levelElement = document.getElementById('level');
+        const storeElement = document.getElementById('store');
+        const exitStoreButton = document.getElementById('exit-store');
+        const enemyInfo = document.getElementById('enemy-info');
+        const enemyNameElement = document.getElementById('enemy-name');
+        const enemyHealthBar = document.getElementById('enemy-health-bar');
+
+        // Game state
+        let gameState = {
+            currentScene: 'start',
+            health: 100,
+            maxHealth: 100,
+            mana: 50,
+            maxMana: 50,
+            gold: 0,
+            xp: 0,
+            level: 1,
+            inventory: [],
+            weapons: [
+                { name: "Sword", type: "weapon", damage: 20, cost: 50 },
+                { name: "Bow", type: "weapon", damage: 15, cost: 40 },
+                { name: "Staff", type: "weapon", damage: 10, cost: 30 }
+            ],
+            potions: [
+                { name: "Health Potion", health: 20, cost: 30 },
+                { name: "Mana Potion", mana: 30, cost: 20 }
+            ],
+            enemies: [
+                { name: "Goblin", health: 50, damage: 10 },
+                { name: "Orc", health: 70, damage: 15 },
+                { name: "Dragon", health: 100, damage: 20 }
+            ]
+        };
+
+        // Scenes
+        const scenes = {
+            start: {
+                text: "Welcome to the game! You find yourself in a bustling town square. What do you want to do?",
+                options: [
+                    { text: "Explore the town", nextScene: "town" },
+                    { text: "Visit the store", nextScene: "store" },
+                    { text: "go adventure", nextScene: "forest" }
+                ]
+            },
+            town: {
+                text: "You walk around the town square. What do you want to do next?",
+                options: [
+                    { text: "Work for gold", nextScene: "work" },
+                    { text: "Visit the bathhouse", nextScene: "bathhouse" },
+                    { text: "return Town Square", nextScene: "start" }]
+                
+            },
+            work: {
+                text: "You decide to work for some gold. After a hard day's work, you earn 20 gold.",
+                options: [
+                    { text: "Return to town", nextScene: "town" },
+                     
+                ],onEnter: gold
+            },
+            bathhouse: {
+                text: "You relax at the bathhouse and regain 20 health.",
+                options: [
+                    { text: "Return to town", nextScene: "town" }
+                ],
+                onEnter: health
+            },
+            store: {
+                text: "Welcome to the store! What would you like to buy?",
+                options: [{ text: "Return to town", nextScene: "town" },
+                ],
+                
+                onEnter: goToStore
+            },
+            forest: {
+                text: "You enter a dark forest. Which way do you want to go?",
+                options: [
+                    { text: "Go north", nextScene: "northScene" },
+                    { text: "Go south", nextScene: "southScene" },
+                    { text: "return town", nextScene: "start" }
+                ]
+            },
+            northScene: {
+                text: "You encounter an enemy! Prepare for battle!",
+                options: [
+                    { text: "Attack", action: battle },
+                    { text: "Return to town", nextScene: "town" }
+                ],
+                onEnter: startBattle
+            },
+            southScene: {
+                text: "You encounter an enemy! Prepare for battle!",
+                options: [
+                    { text: "Attack", action: battle }
+                ],
+                onEnter: startBattle
+            }
+        };
+
+  // Go to store
+  function goToStore() {
+            gameState.currentScene = 'store';
+            storeElement.style.display = 'block';
+            populateStore();
+            storyElement.innerHTML = "<p>Welcome to the store! What do you want to buy?</p>";
+            optionsElement.style.display = 'none';
+        }
+
+        // Populate store
+        function populateStore() {
+            const storeItems = document.getElementById('store-items');
+            storeItems.innerHTML = '';
+            gameState.weapons.forEach((weapon, index) => {
+                const item = document.createElement('div');
+                item.classList.add('store-item');
+                item.innerHTML = `
+                    <p>${weapon.name} - ${weapon.damage} Damage - ${weapon.cost} Gold</p>
+                    <button onclick="buyItem(${index}, 'weapon')">Buy</button>
+                `;
+                storeItems.appendChild(item);
+            });
+            gameState.potions.forEach((potion, index) => {
+                const item = document.createElement('div');
+                item.classList.add('store-item');
+                item.innerHTML = `
+                    <p>${potion.name} - ${potion.effect} - ${potion.cost} Gold</p>
+                    <button onclick="buyItem(${index}, 'potion')">Buy</button>
+                `;
+                storeItems.appendChild(item);
+            });
+        }
+
+        // Exit store
+        exitStoreButton.addEventListener('click', () => {
+            storeElement.style.display = 'none';
+            optionsElement.style.display = 'block';
+            updateScene();
+        });
+
+      // Buy item
+        function buyItem(index, type) {
+            let item;
+            if (type === 'weapon') {
+                item = gameState.weapons[index];
+            } else if (type === 'potion') {
+                item = gameState.potions[index];
+                gameState.health +=25;
+                updatePlayerStats()
+            }
+            if (gameState.gold >= item.cost) {
+                gameState.inventory.push(item);
+                alert(`You bought a ${item.name}!`);
+                gameState.gold -= item.cost;
+                updatePlayerStats()
+            } else {
+                alert('You do not have enough gold.');
+            }
+        }
+
+        // Function to start a battle
+        function startBattle() {
+            const currentEnemy = gameState.enemies[Math.floor(Math.random() * gameState.enemies.length)];
+            currentEnemy.maxHealth = currentEnemy.health; // Set maxHealth for health bar calculation
+    gameState.currentEnemy = currentEnemy;
+    enemyNameElement.textContent = currentEnemy.name;
+    updateEnemyHealth();
+            enemyInfo.style.display = 'block';
+        }
+
+        // Function to handle the battle mechanics
+        function battle() {
+            const playerDamage = gameState.weapons[0].damage; // Assuming the first weapon for simplicity
+            const enemyDamage = gameState.currentEnemy.damage;
+
+            // Player attacks
+            gameState.currentEnemy.health -= playerDamage;
+            updateEnemyHealth();
+
+            // Enemy attacks
+            gameState.health -= enemyDamage;
+            updatePlayerStats();
+
+            // Check if battle is over
+            if (gameState.currentEnemy.health <= 0) {
+                endBattle();
+            } else if (gameState.health <= 0) {
+                endGame();
+                location.reload();
+            }
+        }
+
+        // Function to update enemy health bar
+        function updateEnemyHealth() {
+            const healthPercentage = (gameState.currentEnemy.health / gameState.currentEnemy.maxHealth) * 100;
+            enemyHealthBar.style.width = `${healthPercentage}%`;
+        }
+        function gold(){
+            gameState.gold += 20;
+            updatePlayerStats();
+            alert(`You worked hard you got 20 GOLD`);
+        }
+        function health(){
+            gameState.health +=10;
+            gameState.gold -=5
+            alert(`You clean your sweat got 10 health. you pay 5 GOLD in the Bathouse`);
+            updatePlayerStats();
+        }
+        // Function to update player stats
+        function updatePlayerStats() {
+            
+            healthElement.textContent = gameState.health;
+            goldElement.textContent = gameState.gold;
+            xpElement.textContent = gameState.xp;
+            levelElement.textContent = gameState.level;
+        }
+
+        // Function to end battle
+        function endBattle() {
+            gameState.xp += 50; // Example XP gain
+            gameState.gold += 20; // Example gold gain
+            updatePlayerStats() 
+            gameState.currentEnemy = null;
+            enemyInfo.style.display = 'none';
+            renderScene('forest'); // Return to forest scene after battle
+        }
+
+        // Function to end game
+        function endGame() {
+            alert('Game Over!'); // Example game over message
+            gameState = { ...gameState }; // Reset game state
+            renderScene('start'); // Restart game from beginning
+        }
+
+        // Function to render scenes
+        function renderScene(sceneName) {
+            const scene = scenes[sceneName];
+            gameState.currentScene = sceneName;
+            storyElement.innerHTML = `<p>${scene.text}</p>`;
+            optionsElement.innerHTML = '';
+            scene.options.forEach(option => {
+                const optionButton = document.createElement('button');
+                optionButton.classList.add('option-button');
+                optionButton.textContent = option.text;
+                optionButton.addEventListener('click', () => {
+                    if (option.action) {
+                        option.action();
+                    } else {
+                        renderScene(option.nextScene);
+                    }
+                });
+                optionsElement.appendChild(optionButton);
+            });
+            if (scene.onEnter) {
+                scene.onEnter();
+            }
+        }
+
+        // Event listener for starting the game
+        startGameButton.addEventListener('click', () => {
+            renderScene('start');
+        });
+
+        // Event listener for exiting store
+        exitStoreButton.addEventListener('click', () => {
+            renderScene('town');
+        });
+
+        // Initial render of the start scene
+        renderScene('start');
+        
+    </script>
+</body>
+</html>
